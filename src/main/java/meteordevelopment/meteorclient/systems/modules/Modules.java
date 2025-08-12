@@ -27,6 +27,7 @@ import meteordevelopment.meteorclient.systems.modules.movement.*;
 import meteordevelopment.meteorclient.systems.modules.movement.elytrafly.ElytraFly;
 import meteordevelopment.meteorclient.systems.modules.movement.speed.Speed;
 import meteordevelopment.meteorclient.systems.modules.player.*;
+import meteordevelopment.meteorclient.systems.modules.player.AutoBerryFarm;
 import meteordevelopment.meteorclient.systems.modules.render.*;
 import meteordevelopment.meteorclient.systems.modules.render.blockesp.BlockESP;
 import meteordevelopment.meteorclient.systems.modules.render.marker.Marker;
@@ -423,6 +424,7 @@ public class Modules extends System<Modules> {
         add(new AutoEat());
         add(new AutoClicker());
         add(new AutoFish());
+        add(new AutoBerryFarm());
         add(new AutoGap());
         add(new AutoMend());
         add(new AutoReplenish());
