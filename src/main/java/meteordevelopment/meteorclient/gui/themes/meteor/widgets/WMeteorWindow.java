@@ -23,7 +23,7 @@ public class WMeteorWindow extends WWindow implements MeteorWidget {
     @Override
     protected void onRender(GuiRenderer renderer, double mouseX, double mouseY, double delta) {
         if (expanded || animProgress > 0) {
-            renderer.quad(x, y + header.height, width, height - header.height, theme().backgroundColor.get());
+            renderBackground(renderer, this, theme().outlineColor.get(), theme().backgroundColor.get());
         }
     }
 
