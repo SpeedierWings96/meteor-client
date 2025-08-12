@@ -284,7 +284,11 @@ public abstract class WidgetScreen extends Screen {
         }
     }
 
-    protected void onRenderBefore(DrawContext drawContext, float delta) {}
+    protected void onRenderBefore(DrawContext drawContext, float delta) {
+        int width = getWindowWidth();
+        int height = getWindowHeight();
+        drawContext.fill(0, 0, width, height, 0x40000000);
+    }
 
     @Override
     public void resize(MinecraftClient client, int width, int height) {
