@@ -106,21 +106,21 @@ public class MeteorGuiTheme extends GuiTheme {
     public final ThreeStateColorSetting backgroundColor = new ThreeStateColorSetting(
             sgBackgroundColors,
             "background",
-            new SettingColor(20, 20, 20, 200),
-            new SettingColor(30, 30, 30, 200),
-            new SettingColor(40, 40, 40, 200)
+            new SettingColor(24, 24, 28, 140),
+            new SettingColor(28, 28, 32, 160),
+            new SettingColor(32, 32, 36, 180)
     );
 
-    public final Setting<SettingColor> moduleBackground = color(sgBackgroundColors, "module-background", "Color of module background when active.", new SettingColor(50, 50, 50));
+    public final Setting<SettingColor> moduleBackground = color(sgBackgroundColors, "module-background", "Color of module background when active.", new SettingColor(60, 60, 70, 160));
 
     // Outline
 
     public final ThreeStateColorSetting outlineColor = new ThreeStateColorSetting(
             sgOutline,
             "outline",
-            new SettingColor(0, 0, 0),
-            new SettingColor(10, 10, 10),
-            new SettingColor(20, 20, 20)
+            new SettingColor(0, 0, 0, 120),
+            new SettingColor(0, 0, 0, 140),
+            new SettingColor(0, 0, 0, 160)
     );
 
     // Separator
@@ -134,9 +134,9 @@ public class MeteorGuiTheme extends GuiTheme {
     public final ThreeStateColorSetting scrollbarColor = new ThreeStateColorSetting(
             sgScrollbar,
             "Scrollbar",
-            new SettingColor(30, 30, 30, 200),
-            new SettingColor(40, 40, 40, 200),
-            new SettingColor(50, 50, 50, 200)
+            new SettingColor(40, 40, 48, 100),
+            new SettingColor(48, 48, 56, 120),
+            new SettingColor(56, 56, 64, 140)
     );
 
     // Slider
