@@ -40,7 +40,7 @@ function sendDiscordWebhook() {
                 avatar_url: "https://meteorclient.com/icon.png",
                 embeds: [
                     {
-                        title: "Meteor Client " + mcVersion + " build #" + buildNumber,
+                        title: "Axolotl Client " + mcVersion + " build #" + buildNumber,
                         description: description,
                         url: "https://meteorclient.com",
                             color: success ? 2672680 : 13117480

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "name": "Meteor Client",
-  "id": "meteor-client",
+  "name": "Axolotl Client",
+  "id": "axolotl-client",
   "version": "${version}",
-  "description": "Based utility mod.",
+  "description": "Axolotl Client — advanced Fabric utility client.",
   "authors": [
     "MineGame159",
     "squidoodly",
@@ -16,7 +16,7 @@
     "discord": "https://meteorclient.com/discord"
   },
   "license": "GPL-3.0",
-  "icon": "assets/meteor-client/icon.png",
+  "icon": "assets/axolotl-client/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [
@@ -36,9 +36,9 @@
   ],
   "accessWidener": "meteor-client.accesswidener",
   "custom": {
-    "meteor-client:build_number": "${build_number}",
-    "meteor-client:color": "145,61,226",
-    "meteor-client:commit": "${commit}",
+    "axolotl-client:build_number": "${build_number}",
+    "axolotl-client:color": "145,61,226",
+    "axolotl-client:commit": "${commit}",
     "modmenu": {
       "links": {
         "modmenu.discord": "https://meteorclient.com/discord"
