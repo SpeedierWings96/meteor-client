@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
@@ -44,7 +47,6 @@ public class AutoBerryFarm extends Module {
         .defaultValue(true)
         .build()
     );
-
 
     private final Setting<Integer> maxPerTick = sgGeneral.add(new IntSetting.Builder()
         .name("max-per-tick")
@@ -103,8 +105,25 @@ public class AutoBerryFarm extends Module {
         .build()
     );
 
+    private final Setting<Boolean> validateCrosshair = sgGeneral.add(new BoolSetting.Builder()
+        .name("validate-crosshair")
+        .description("Raycast-validate crosshair is on the bush before interacting.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Integer> perBushCooldown = sgGeneral.add(new IntSetting.Builder()
+        .name("per-bush-cooldown")
+        .description("Cooldown in ticks for a bush after interacting or failed validation.")
+        .defaultValue(10)
+        .min(0)
+        .sliderMax(40)
+        .build()
+    );
+
     private final Random rng = new Random();
     private int cooldownTicks;
+    private final Map<BlockPos, Integer> bushCooldownTicks = new HashMap<>();
 
     public AutoBerryFarm() {
         super(Categories.Player, "auto-berry-farm", "Automatically harvests sweet berries within range. Stealth mode uses human-like timing and legit rotations.");
@@ -113,6 +132,7 @@ public class AutoBerryFarm extends Module {
     @Override
     public void onActivate() {
         cooldownTicks = 0;
+        bushCooldownTicks.clear();
     }
 
     @EventHandler
@@ -120,6 +140,16 @@ public class AutoBerryFarm extends Module {
         if (!isActive()) return;
         if (mc.player == null || mc.world == null) return;
         if (!inScreens.get() && mc.currentScreen != null) return;
+
+        if (!bushCooldownTicks.isEmpty()) {
+            Iterator<Map.Entry<BlockPos, Integer>> it = bushCooldownTicks.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<BlockPos, Integer> e = it.next();
+                int v = e.getValue() - 1;
+                if (v <= 0) it.remove();
+                else e.setValue(v);
+            }
+        }
 
         if (cooldownTicks > 0) {
             cooldownTicks--;
@@ -154,6 +184,7 @@ public class AutoBerryFarm extends Module {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -r; dz <= r; dz++) {
                     BlockPos pos = playerPos.add(dx, dy, dz);
+                    if (bushCooldownTicks.getOrDefault(pos, 0) > 0) continue;
                     BlockState st = mc.world.getBlockState(pos);
                     if (st.getBlock() instanceof SweetBerryBushBlock) {
                         if (st.get(SweetBerryBushBlock.AGE) == 3) {
@@ -183,40 +214,48 @@ public class AutoBerryFarm extends Module {
         Vec3d center = Vec3d.ofCenter(pos);
         Vec3d hit = center;
         if (stealth.get()) {
-            double ox = (rng.nextDouble() - 0.5) * 0.1;
-            double oy = (rng.nextDouble() - 0.5) * 0.1;
-            double oz = (rng.nextDouble() - 0.5) * 0.1;
+            double ox = (rng.nextDouble() - 0.5) * 0.12;
+            double oy = (rng.nextDouble() - 0.5) * 0.12;
+            double oz = (rng.nextDouble() - 0.5) * 0.12;
             hit = center.add(ox, oy, oz);
         }
 
-        BlockHitResult bhr = new BlockHitResult(hit, Direction.UP, pos, false);
-
-        double yaw = Rotations.getYaw(hit);
-        double pitch = Rotations.getPitch(hit);
-
-        if (stealth.get()) {
-            Rotations.rotate(yaw, pitch, rotatePriority.get(), true, () -> {
-                if (sneakBefore.get()) {
-                    boolean wasSneaking = mc.player.isSneaking();
-                    mc.player.setSneaking(true);
-                    BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
-                    mc.player.setSneaking(wasSneaking);
-                } else {
-                    BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
-                }
-            });
+        Vec3d eye = mc.player.getEyePos();
+        RaycastContext rc = new RaycastContext(eye, hit, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, mc.player);
+        HitResult hr = mc.world.raycast(rc);
+        BlockHitResult bhr;
+        if (hr instanceof BlockHitResult bhr0 && bhr0.getType() == HitResult.Type.BLOCK && bhr0.getBlockPos().equals(pos)) {
+            bhr = bhr0;
         } else {
-            Rotations.rotate(yaw, pitch, rotatePriority.get(), () -> {
-                if (sneakBefore.get()) {
-                    boolean wasSneaking = mc.player.isSneaking();
-                    mc.player.setSneaking(true);
-                    BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
-                    mc.player.setSneaking(wasSneaking);
-                } else {
-                    BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
-                }
-            });
+            bhr = new BlockHitResult(hit, Direction.UP, pos, false);
         }
+
+        double yaw = Rotations.getYaw(bhr.getPos());
+        double pitch = Rotations.getPitch(bhr.getPos());
+
+        Runnable doInteract = () -> {
+            if (validateCrosshair.get()) {
+                HitResult hr2 = mc.world.raycast(new RaycastContext(mc.player.getEyePos(), bhr.getPos(), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, mc.player));
+                if (!(hr2 instanceof BlockHitResult b2) || !b2.getBlockPos().equals(pos)) {
+                    bushCooldownTicks.put(pos.toImmutable(), Math.max(1, perBushCooldown.get() - 2 + rng.nextInt(5)));
+                    return;
+                }
+            }
+
+            if (sneakBefore.get()) {
+                boolean wasSneaking = mc.player.isSneaking();
+                mc.player.setSneaking(true);
+                BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
+                mc.player.setSneaking(wasSneaking);
+            } else {
+                BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
+            }
+
+            bushCooldownTicks.put(pos.toImmutable(), Math.max(1, perBushCooldown.get() - 2 + rng.nextInt(5)));
+        };
+
+        if (stealth.get()) Rotations.rotate(yaw, pitch, rotatePriority.get(), true, doInteract);
+        else Rotations.rotate(yaw, pitch, rotatePriority.get(), doInteract);
 
         return true;
     }
