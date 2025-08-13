@@ -38,6 +38,13 @@ public class AutoBerryFarm extends Module {
         .sliderMax(6)
         .build()
     );
+    private final Setting<Boolean> stealth = sgGeneral.add(new BoolSetting.Builder()
+        .name("stealth-mode")
+        .description("Safer interactions with jittered timing, legit rotations and 1 action per tick.")
+        .defaultValue(true)
+        .build()
+    );
+
 
     private final Setting<Integer> maxPerTick = sgGeneral.add(new IntSetting.Builder()
         .name("max-per-tick")
@@ -50,7 +57,7 @@ public class AutoBerryFarm extends Module {
 
     private final Setting<Integer> minDelay = sgGeneral.add(new IntSetting.Builder()
         .name("min-delay-ticks")
-        .description("Minimum delay between batches in ticks.")
+        .description("Minimum delay between actions in ticks.")
         .defaultValue(2)
         .min(0)
         .sliderMax(20)
@@ -59,7 +66,7 @@ public class AutoBerryFarm extends Module {
 
     private final Setting<Integer> maxDelay = sgGeneral.add(new IntSetting.Builder()
         .name("max-delay-ticks")
-        .description("Maximum delay between batches in ticks.")
+        .description("Maximum delay between actions in ticks.")
         .defaultValue(6)
         .min(0)
         .sliderMax(40)
@@ -100,7 +107,7 @@ public class AutoBerryFarm extends Module {
     private int cooldownTicks;
 
     public AutoBerryFarm() {
-        super(Categories.Player, "auto-berry-farm", "Automatically harvests sweet berries within range.");
+        super(Categories.Player, "auto-berry-farm", "Automatically harvests sweet berries within range. Stealth mode uses human-like timing and legit rotations.");
     }
 
     @Override
@@ -122,16 +129,19 @@ public class AutoBerryFarm extends Module {
         List<BlockPos> targets = findMatureBushes();
         if (targets.isEmpty()) return;
 
+        int allowed = stealth.get() ? 1 : maxPerTick.get();
         int done = 0;
         for (BlockPos pos : targets) {
-            if (done >= maxPerTick.get()) break;
+            if (done >= allowed) break;
             if (interactBush(pos)) done++;
         }
 
         if (done > 0) {
             int mn = Math.min(minDelay.get(), maxDelay.get());
             int mx = Math.max(minDelay.get(), maxDelay.get());
-            cooldownTicks = mn + rng.nextInt(mx - mn + 1);
+            int base = mn + rng.nextInt(mx - mn + 1);
+            if (stealth.get()) base += rng.nextInt(2);
+            cooldownTicks = base;
         }
     }
 
@@ -170,21 +180,43 @@ public class AutoBerryFarm extends Module {
     }
 
     private boolean interactBush(BlockPos pos) {
-        Vec3d hit = Vec3d.ofCenter(pos);
+        Vec3d center = Vec3d.ofCenter(pos);
+        Vec3d hit = center;
+        if (stealth.get()) {
+            double ox = (rng.nextDouble() - 0.5) * 0.1;
+            double oy = (rng.nextDouble() - 0.5) * 0.1;
+            double oz = (rng.nextDouble() - 0.5) * 0.1;
+            hit = center.add(ox, oy, oz);
+        }
+
         BlockHitResult bhr = new BlockHitResult(hit, Direction.UP, pos, false);
 
         double yaw = Rotations.getYaw(hit);
         double pitch = Rotations.getPitch(hit);
-        Rotations.rotate(yaw, pitch, rotatePriority.get(), () -> {
-            if (sneakBefore.get()) {
-                boolean wasSneaking = mc.player.isSneaking();
-                mc.player.setSneaking(true);
-                BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
-                mc.player.setSneaking(wasSneaking);
-            } else {
-                BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
-            }
-        });
+
+        if (stealth.get()) {
+            Rotations.rotate(yaw, pitch, rotatePriority.get(), true, () -> {
+                if (sneakBefore.get()) {
+                    boolean wasSneaking = mc.player.isSneaking();
+                    mc.player.setSneaking(true);
+                    BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
+                    mc.player.setSneaking(wasSneaking);
+                } else {
+                    BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
+                }
+            });
+        } else {
+            Rotations.rotate(yaw, pitch, rotatePriority.get(), () -> {
+                if (sneakBefore.get()) {
+                    boolean wasSneaking = mc.player.isSneaking();
+                    mc.player.setSneaking(true);
+                    BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
+                    mc.player.setSneaking(wasSneaking);
+                } else {
+                    BlockUtils.interact(bhr, Hand.MAIN_HAND, true);
+                }
+            });
+        }
 
         return true;
     }
