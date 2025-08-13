@@ -46,7 +46,8 @@ import java.io.File;
 import java.lang.invoke.MethodHandles;
 
 public class MeteorClient implements ClientModInitializer {
-    public static final String MOD_ID = "meteor-client";
+    public static final String MOD_ID = "axolotl-client";
+    public static final String ASSETS_ID = "axolotl-client";
     public static final ModMetadata MOD_META;
     public static final String NAME;
     public static final Version VERSION;
@@ -195,6 +196,6 @@ public class MeteorClient implements ClientModInitializer {
     }
 
     public static Identifier identifier(String path) {
-        return Identifier.of(MeteorClient.MOD_ID, path);
+        return Identifier.of(ASSETS_ID, path);
     }
 }

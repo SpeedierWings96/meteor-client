@@ -202,7 +202,7 @@ publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
-            artifactId = "meteor-client"
+            artifactId = "axolotl-client"
 
             version = properties["minecraft_version"] as String + "-SNAPSHOT"
         }
